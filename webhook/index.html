@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Discord風Webhookチャット（送信専用）</title>
+  <title>webhook sender</title>
   <style>
     :root{--bg:#0f1720;--panel:#111827;--accent:#5865F2;--muted:#94a3b8;--bubble:#161b22;--me:#2b3138}
     *{box-sizing:border-box}
@@ -55,7 +55,7 @@
       <div class="field">
         <button id="testBtn">プレビューに追加</button>
       </div>
-      <div class="field small">注意: Discord のサーバーはブラウザから直接の送信を制限する場合があります（CORS）。ブラウザで送信できない場合は下にある簡易プロキシを使ってください。</div>
+      <div class="field small">Nayu</div>
       <div id="status" class="small"></div>
     </div>
 
@@ -126,43 +126,59 @@
         avatar_url: avatarInput.value || undefined,
       };
 
-      // 優先: ファイルがある場合は multipart/form-data で送る
+      const clearInputs = ()=>{
+        content.value = '';
+        imageUrlInput.value='';
+        fileInput.value='';
+      };
+
+      const successNotice = ()=>{
+        status.innerText = '✔ 送信成功';
+        status.style.color = '#b4ffb4';
+        setTimeout(()=>{status.innerText='';status.style.color='';},1500);
+      };
+
       if(fileInput.files.length){
         const f = fileInput.files[0];
         const form = new FormData();
         form.append('file', f, f.name);
         form.append('payload_json', JSON.stringify(payload));
-
         try{
           const res = await fetch(webhook, {method:'POST',body:form});
-          if(res.ok){ pushLocalBubble(payload.content || '(画像のみ)', true, URL.createObjectURL(f)); status.innerText = '送信成功'; }
-          else { status.innerText = '送信に失敗しました。HTTP ' + res.status; }
-        } catch(e){
-          console.error(e);
-          status.innerText = '送信できませんでした（CORS かネットワークの問題が原因の可能性があります）。';
-        }
+          if(res.ok){ pushLocalBubble(payload.content || '(画像のみ)', true, URL.createObjectURL(f)); successNotice(); clearInputs(); }
+          else { status.innerText = '送信失敗: HTTP ' + res.status; }
+        } catch(e){ status.innerText = '送信不可（CORS など）'; }
         return;
       }
 
-      // 画像URL があれば embed で送る
-      if(imageUrlInput.value.trim()){
-        payload.embeds = [{image:{url:imageUrlInput.value.trim()}}];
-      }
+      if(imageUrlInput.value.trim()) payload.embeds=[{image:{url:imageUrlInput.value.trim()}}];
 
       try{
-        const res = await fetch(webhook, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-        if(res.ok){ pushLocalBubble(payload.content || '(画像のみ)', true, imageUrlInput.value.trim() || null); status.innerText = '送信成功'; }
-        else { status.innerText = '送信に失敗しました。HTTP ' + res.status; }
-      } catch(err){
-        console.error(err);
-        status.innerText = '送信できませんでした（CORS でブロックされた可能性があります）。';
-      }
+        const res = await fetch(webhook,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        if(res.ok){ pushLocalBubble(payload.content || '(画像のみ)', true, imageUrlInput.value.trim()||null); successNotice(); clearInputs(); }
+        else{ status.innerText = '送信失敗: HTTP '+res.status; }
+      }catch(err){ status.innerText='送信不可（CORS）'; }
     }
 
     document.getElementById('send').addEventListener('click', sendToWebhook);
 
-    // Enter で送信（Shift+Enter は改行）
     content.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendToWebhook(); } });
+
+    // 画像の貼り付け対応
+    document.addEventListener('paste', (e)=>{
+      const items = e.clipboardData.items;
+      for(const it of items){
+        if(it.type.startsWith('image/')){
+          const f = it.getAsFile();
+          fileInput.files = new DataTransfer().files; // reset
+          const dt = new DataTransfer();
+          dt.items.add(f);
+          fileInput.files = dt.files;
+          pushLocalBubble('画像プレビュー', true, URL.createObjectURL(f));
+          status.innerText='画像を貼り付けとして読み込みました';
+        }
+      }
+    });('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendToWebhook(); } });
   </script>
 </body>
 </html>
