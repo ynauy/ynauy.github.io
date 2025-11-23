@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Discord風Webhookチャット（送信専用）</title>
+  <style>
+    :root{--bg:#0f1720;--panel:#111827;--accent:#5865F2;--muted:#94a3b8;--bubble:#161b22;--me:#2b3138}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:linear-gradient(180deg,#071021, #071827);color:#e6eef8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .app{width:900px;max-width:100%;height:640px;background:var(--panel);border-radius:12px;display:grid;grid-template-columns:280px 1fr;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,.6)}
+    .sidebar{background:linear-gradient(180deg,rgba(255,255,255,.02),transparent);padding:16px;border-right:1px solid rgba(255,255,255,.03)}
+    .title{font-weight:700;margin-bottom:12px}
+    .field{margin-bottom:10px}
+    input[type=text],textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.04);background:transparent;color:inherit}
+    button{background:var(--accent);border:0;padding:8px 12px;border-radius:8px;color:white;cursor:pointer}
+    .main{display:flex;flex-direction:column}
+    .messages{flex:1;padding:20px;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.01),transparent)}
+    .msg{margin-bottom:12px;display:flex}
+    .msg.me{justify-content:flex-end}
+    .bubble{max-width:70%;padding:10px 14px;border-radius:12px;background:var(--bubble);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+    .msg.me .bubble{background:var(--me)}
+    .inputbar{display:flex;padding:12px;border-top:1px solid rgba(255,255,255,.02);gap:8px}
+    .inputbar textarea{flex:1;resize:none;height:56px;padding:10px}
+    .small{font-size:12px;color:var(--muted)}
+    .preview img{max-width:220px;border-radius:8px;margin-top:8px}
+    .hint{font-size:12px;color:#ffefc3;background:#4b2;background:transparent}
+    .error{color:#ffb4b4}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="sidebar">
+      <div class="title">Webhook 設定</div>
+      <div class="field">
+        <label class="small">Webhook URL</label>
+        <input id="webhook" type="text" placeholder="https://discord.com/api/webhooks/..." />
+      </div>
+      <div class="field">
+        <label class="small">表示名（任意）</label>
+        <input id="username" type="text" placeholder="表示名を入力" />
+      </div>
+      <div class="field">
+        <label class="small">アバターURL（任意）</label>
+        <input id="avatar" type="text" placeholder="https://...png" />
+      </div>
+      <div class="field">
+        <label class="small">画像を直接送る場合（ファイル）</label>
+        <input id="file" type="file" accept="image/*" />
+      </div>
+      <div class="field">
+        <label class="small">画像URLで送る場合</label>
+        <input id="imageUrl" type="text" placeholder="画像URLを貼る" />
+      </div>
+      <div class="field">
+        <button id="testBtn">プレビューに追加</button>
+      </div>
+      <div class="field small">注意: Discord のサーバーはブラウザから直接の送信を制限する場合があります（CORS）。ブラウザで送信できない場合は下にある簡易プロキシを使ってください。</div>
+      <div id="status" class="small"></div>
+    </div>
+
+    <div class="main">
+      <div class="messages" id="messages" aria-live="polite"></div>
+
+      <div class="inputbar">
+        <textarea id="content" placeholder="メッセージを入力...（画像と一緒に送れます）"></textarea>
+        <button id="send">送信</button>
+      </div>
+    </div>
+  </div>
+
+  <template id="tplMsg">
+    <div class="msg">
+      <div class="bubble"></div>
+    </div>
+  </template>
+
+  <script>
+    const webhookInput = document.getElementById('webhook');
+    const usernameInput = document.getElementById('username');
+    const avatarInput = document.getElementById('avatar');
+    const fileInput = document.getElementById('file');
+    const imageUrlInput = document.getElementById('imageUrl');
+    const messages = document.getElementById('messages');
+    const tpl = document.getElementById('tplMsg');
+    const content = document.getElementById('content');
+    const status = document.getElementById('status');
+
+    function pushLocalBubble(text, isMe=true, imgSrc=null){
+      const node = tpl.content.cloneNode(true);
+      const el = node.querySelector('.msg');
+      if(isMe) el.classList.add('me');
+      const bubble = node.querySelector('.bubble');
+      if(text) bubble.innerText = text;
+      if(imgSrc){
+        const i = document.createElement('img');
+        i.src = imgSrc;
+        bubble.appendChild(i);
+      }
+      messages.appendChild(node);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    document.getElementById('testBtn').addEventListener('click', ()=>{
+      const url = imageUrlInput.value.trim();
+      if(url){
+        pushLocalBubble('画像プレビュー', true, url);
+        status.innerText = '画像プレビューを追加しました。送信時にWebhookに含まれます。';
+      } else if(fileInput.files.length){
+        const f = fileInput.files[0];
+        const u = URL.createObjectURL(f);
+        pushLocalBubble('画像プレビュー', true, u);
+        status.innerText = 'ファイルプレビューを追加しました。送信時にWebhookに含まれます。';
+      } else {
+        status.innerText = '画像が選択されていません。';
+      }
+    });
+
+    async function sendToWebhook(){
+      status.innerText = '';
+      const webhook = webhookInput.value.trim();
+      if(!webhook){ status.innerText = 'Webhook URL を入力してください。'; return; }
+      const payload = {
+        content: content.value || undefined,
+        username: usernameInput.value || undefined,
+        avatar_url: avatarInput.value || undefined,
+      };
+
+      // 優先: ファイルがある場合は multipart/form-data で送る
+      if(fileInput.files.length){
+        const f = fileInput.files[0];
+        const form = new FormData();
+        form.append('file', f, f.name);
+        form.append('payload_json', JSON.stringify(payload));
+
+        try{
+          const res = await fetch(webhook, {method:'POST',body:form});
+          if(res.ok){ pushLocalBubble(payload.content || '(画像のみ)', true, URL.createObjectURL(f)); status.innerText = '送信成功'; }
+          else { status.innerText = '送信に失敗しました。HTTP ' + res.status; }
+        } catch(e){
+          console.error(e);
+          status.innerText = '送信できませんでした（CORS かネットワークの問題が原因の可能性があります）。';
+        }
+        return;
+      }
+
+      // 画像URL があれば embed で送る
+      if(imageUrlInput.value.trim()){
+        payload.embeds = [{image:{url:imageUrlInput.value.trim()}}];
+      }
+
+      try{
+        const res = await fetch(webhook, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        if(res.ok){ pushLocalBubble(payload.content || '(画像のみ)', true, imageUrlInput.value.trim() || null); status.innerText = '送信成功'; }
+        else { status.innerText = '送信に失敗しました。HTTP ' + res.status; }
+      } catch(err){
+        console.error(err);
+        status.innerText = '送信できませんでした（CORS でブロックされた可能性があります）。';
+      }
+    }
+
+    document.getElementById('send').addEventListener('click', sendToWebhook);
+
+    // Enter で送信（Shift+Enter は改行）
+    content.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendToWebhook(); } });
+  </script>
+</body>
+</html>
