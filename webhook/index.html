@@ -14,8 +14,8 @@
     .field{margin-bottom:10px}
     input[type=text],textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.04);background:transparent;color:inherit}
     button{background:var(--accent);border:0;padding:8px 12px;border-radius:8px;color:white;cursor:pointer}
-    .main{display:flex;flex-direction:column}
-    .messages{flex:1;padding:20px;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.01),transparent)}
+    .main{display:flex;flex-direction:column;overflow:hidden;}
+    .messages{flex:1;overflow-y:auto;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.03),transparent);} 
     .msg{margin-bottom:12px;display:flex}
     .msg.me{justify-content:flex-end}
     .bubble{max-width:70%;padding:10px 14px;border-radius:12px;background:var(--bubble);box-shadow:0 2px 6px rgba(0,0,0,.4)}
@@ -37,15 +37,15 @@
         <input id="webhook" type="text" placeholder="https://discord.com/api/webhooks/..." />
       </div>
       <div class="field">
-        <label class="small">表示名（任意）</label>
+        <label class="small">表示名</label>
         <input id="username" type="text" placeholder="表示名を入力" />
       </div>
       <div class="field">
-        <label class="small">アバターURL（任意）</label>
+        <label class="small">アバターURL</label>
         <input id="avatar" type="text" placeholder="https://...png" />
       </div>
       <div class="field">
-        <label class="small">画像を直接送る場合（ファイル）</label>
+        <label class="small">画像を直接送る場合</label>
         <input id="file" type="file" accept="image/*" />
       </div>
       <div class="field">
@@ -55,7 +55,7 @@
       <div class="field">
         <button id="testBtn">プレビューに追加</button>
       </div>
-      <div class="field small">Na</div>
+      <div class="field small">注意: Discord のサーバーはブラウザから直接の送信を制限する場合があります（CORS）。ブラウザで送信できない場合は下にある簡易プロキシを使ってください。</div>
       <div id="status" class="small"></div>
     </div>
 
