@@ -17,12 +17,12 @@ joinBtn.addEventListener('click', async () => {
         return;
     }
 
-    // UI Feedback
     joinBtn.disabled = true;
     loader.style.display = "block";
     logArea.innerText = ">> Initializing request to Discord API...\n";
 
     try {
+        // サーバー参加用のAPIエンドポイント
         const url = `https://discord.com/api/v10/invites/${code}`;
         
         const response = await fetch(url, {
@@ -36,15 +36,15 @@ joinBtn.addEventListener('click', async () => {
         const data = await response.json();
 
         if (response.ok) {
-            logArea.style.color = "var(--success)";
-            logArea.innerText += `>> Status: 200 OK\n>> Server Joined: ${data.guild?.name || 'Success'}`;
+            logArea.style.color = "#3ba55c"; // 成功時の色
+            logArea.innerText += `>> Status: 200 OK\n>> Joined Server!`;
         } else {
-            logArea.style.color = "var(--danger)";
+            logArea.style.color = "#ed4245"; // エラー時の色
             logArea.innerText += `>> Status: ${response.status}\n>> Message: ${data.message}`;
         }
     } catch (error) {
-        logArea.style.color = "var(--danger)";
-        logArea.innerText += `>> Network Error: Request blocked.\n>> Reason: CORS policy or Invalid Token.`;
+        logArea.style.color = "#ed4245";
+        logArea.innerText += `>> Network Error: Request failed.\n>> Reason: Likely CORS block or invalid endpoint.`;
     } finally {
         joinBtn.disabled = false;
         loader.style.display = "none";
