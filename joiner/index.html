@@ -13,18 +13,17 @@
             --text-main: #ffffff;
             --text-muted: #b9bbbe;
             --danger: #ed4245;
-            --success: #3ba55c;
         }
 
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--background);
             color: var(--text-main);
-            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            margin: 0;
         }
 
         .app-container {
@@ -33,10 +32,8 @@
             background: var(--card-bg);
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
-
-        h2 { text-align: center; margin-bottom: 20px; font-size: 20px; }
 
         label {
             display: block;
@@ -47,24 +44,19 @@
             text-transform: uppercase;
         }
 
-        /* UI修正: Token入力欄のスタイル */
         textarea, input {
             width: 100%;
             padding: 12px;
             margin-bottom: 20px;
-            border-radius: 4px;
-            border: 1px solid #202225;
             background: var(--input-bg);
+            border: 1px solid transparent;
+            border-radius: 4px;
             color: white;
             box-sizing: border-box;
             font-family: monospace;
-            font-size: 14px;
         }
 
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
+        textarea { min-height: 120px; resize: vertical; }
 
         .primary-btn {
             width: 100%;
@@ -75,18 +67,14 @@
             border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.2s;
         }
-
-        .primary-btn:hover { background: #4752c4; }
-        .primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .console-box {
             margin-top: 25px;
             background: #000;
             color: #00ff00;
             padding: 15px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
             min-height: 150px;
@@ -95,13 +83,6 @@
             white-space: pre-wrap;
             border: 1px solid #444;
         }
-
-        .footer {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 11px;
-            color: var(--text-muted);
-        }
     </style>
 </head>
 <body>
@@ -109,72 +90,78 @@
 <div class="app-container">
     <h2>API Joiner Study</h2>
     
-    <label>User Tokens (改行区切り)</label>
+    <label>User Tokens (Line by Line)</label>
     <textarea id="tokens" placeholder="mfa.xxxxx...&#10;mfa.yyyyy..."></textarea>
 
-    <label>Invite Code (Vanity)</label>
-    <input type="text" id="inviteCode" placeholder="例: discord-developers">
+    <label>Invite Code</label>
+    <input type="text" id="inviteCode" placeholder="example-vanity">
 
-    <button id="execBtn" class="primary-btn">一括リクエスト実行</button>
+    <button id="execBtn" class="primary-btn">一括実行</button>
 
-    <div class="console-box" id="log">Ready...</div>
-
-    <div class="footer">学習目的以外の使用は控えてください。</div>
+    <div class="console-box" id="log">Console Ready...</div>
 </div>
 
 <script>
     const execBtn = document.getElementById('execBtn');
     const logArea = document.getElementById('log');
 
+    // 400エラー回避のためのダミープロパティ (コンテキストデータ)
+    const contextData = btoa(JSON.stringify({
+        location: "Join Guild",
+        location_guild_id: null,
+        location_channel_id: null,
+        location_channel_type: null
+    }));
+
     execBtn.addEventListener('click', async () => {
         const tokenInput = document.getElementById('tokens').value;
-        const code = document.getElementById('inviteCode').value;
-
-        // トークンを配列化
+        const code = document.getElementById('inviteCode').value.split('/').pop(); // URLだった場合コードのみ抽出
         const tokens = tokenInput.split(/\r?\n/).map(t => t.trim()).filter(t => t !== "");
 
         if (tokens.length === 0 || !code) {
-            alert("トークンと招待コードを入力してください。");
+            logArea.innerText = ">> Error: Token or Invite Code is missing.";
             return;
         }
 
         execBtn.disabled = true;
-        logArea.innerText = `>> 処理開始: ${tokens.length}件\n`;
+        logArea.innerText = `>> Starting Task: ${tokens.length} accounts\n`;
 
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
-            logArea.innerText += `\n[${i+1}/${tokens.length}] Sending...`;
+            logArea.innerText += `\n[${i+1}/${tokens.length}] Sending Request...`;
 
             try {
-                // Discord API (V10)
+                // ユーザー版エンドポイント (v9またはv10)
                 const url = `https://discord.com/api/v10/invites/${code}`;
 
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Authorization': token,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Context-Properties': contextData // アプリ版に近い挙動を模倣
                     },
-                    // 重要: 空のJSONオブジェクトを送ることで「無効なJSON」エラーを回避
-                    body: JSON.stringify({})
+                    body: JSON.stringify({}) // 必須: 空のオブジェクト
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    logArea.innerText += `\n>> SUCCESS: サーバーに参加しました。`;
+                    logArea.innerText += `\n>> SUCCESS: Joined ${data.guild?.name || 'Server'}`;
                 } else {
-                    logArea.innerText += `\n>> ERROR ${response.status}: ${data.message}`;
+                    logArea.innerText += `\n>> FAILED (${response.status}): ${data.message}`;
+                    // 400エラー時の詳細ログ
+                    if(response.status === 400) console.log("Payload Error Details:", data);
                 }
             } catch (err) {
-                logArea.innerText += `\n>> FETCH ERROR: ブラウザの制限(CORS)により遮断されました。`;
+                logArea.innerText += `\n>> NETWORK ERROR: Check CORS or Connection.`;
             }
 
-            // 連続送信による負荷軽減のための待機
+            // 安全のためのディレイ
             await new Promise(r => setTimeout(r, 1000));
         }
 
-        logArea.innerText += `\n\n>> 全ての処理が完了しました。`;
+        logArea.innerText += `\n\n>> Task Completed.`;
         execBtn.disabled = false;
     });
 </script>
