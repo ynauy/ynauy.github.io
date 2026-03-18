@@ -1,100 +1,57 @@
-:root {
-    --blurple: #5865F2;
-    --background: #36393f;
-    --card-bg: #2f3136;
-    --input-bg: #202225;
-    --text-main: #ffffff;
-    --text-muted: #b9bbbe;
-    --danger: #ed4245;
-    --success: #3ba55c;
-}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord API Study Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19.27 4.73C17.78 4.05 16.18 3.56 14.5 3.32c-.03.06-.07.12-.1.19-1.9-.28-3.83-.28-5.73 0-.03-.07-.07-.13-.1-.19-1.68.24-3.28.73-4.77 1.41L3.57 5.05c2.58-3.84 6.32-5.05 6.32-5.05.02.03.05.06.07.09 1.34-.18 2.7-.18 4.04 0 .02-.03.05-.06.07-.09 0 0 3.74 1.21 6.32 5.05l-.12.32z"/></svg>
+                <h1>API Researcher</h1>
+            </div>
+            <p class="subtitle">Discord API Structure Learning</p>
+        </header>
 
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: var(--background);
-    color: var(--text-main);
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
+        <main>
+            <section class="input-group">
+                <label for="token">User Access Token</label>
+                <div class="input-wrapper">
+                    <input type="password" id="token" placeholder="mfa.xxxxxxxxxxxxxx...">
+                    <span class="hint">トークンはブラウザ内でのみ処理されます。</span>
+                </div>
 
-.app-container {
-    width: 90%;
-    max-width: 480px;
-    background: var(--card-bg);
-    padding: 32px;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-}
+                <label for="inviteCode">Vanity / Invite Code</label>
+                <div class="input-wrapper">
+                    <input type="text" id="inviteCode" placeholder="例: discord-developers">
+                </div>
 
-header { text-align: center; margin-bottom: 30px; }
-.logo { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--blurple); }
-h1 { margin: 0; font-size: 24px; letter-spacing: -0.5px; }
-.subtitle { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
+                <button id="joinBtn" class="primary-btn">
+                    <span>リクエストを実行</span>
+                    <div class="loader" id="loader"></div>
+                </button>
+            </section>
 
-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 12px; text-transform: uppercase; color: var(--text-muted); }
-.input-wrapper { margin-bottom: 20px; }
+            <section class="output-group">
+                <div class="output-header">
+                    <span>Console Output</span>
+                    <button id="clearBtn">Clear</button>
+                </div>
+                <div id="log" class="console-box">Ready for request...</div>
+            </section>
+        </main>
 
-input {
-    width: 100%;
-    padding: 12px;
-    background: var(--input-bg);
-    border: 1px solid transparent;
-    border-radius: 4px;
-    color: white;
-    box-sizing: border-box;
-    transition: border 0.2s;
-}
-input:focus { outline: none; border-color: var(--blurple); }
-.hint { font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px; }
+        <footer>
+            <p>&copy; 2026 API Study Project | For Educational Purposes Only</p>
+        </footer>
+    </div>
 
-.primary-btn {
-    background: var(--blurple);
-    color: white;
-    border: none;
-    padding: 14px;
-    width: 100%;
-    border-radius: 4px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    position: relative;
-}
-.primary-btn:hover { background: #4752c4; }
-.primary-btn:active { transform: scale(0.98); }
-
-.output-group { margin-top: 30px; }
-.output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); }
-#clearBtn { background: none; border: none; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
-
-.console-box {
-    background: #000;
-    color: #00ff00;
-    padding: 15px;
-    border-radius: 6px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    min-height: 120px;
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #444;
-}
-
-/* Loading Animation */
-.loader {
-    display: none;
-    width: 18px;
-    height: 18px;
-    border: 2px solid #fff;
-    border-bottom-color: transparent;
-    border-radius: 50%;
-    animation: rotation 1s linear infinite;
-    position: absolute;
-    right: 15px;
-    top: 13px;
-}
-@keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-footer { margin-top: 30px; text-align: center; font-size: 10px; color: var(--text-muted); opacity: 0.6; }
+    <script src="main.js"></script>
+</body>
+</html>
