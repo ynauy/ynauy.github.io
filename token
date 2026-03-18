@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discord Token Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0b0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --border: #2a2a3a;
+    --border2: #35354a;
+    --blurple: #5865f2;
+    --blurple-dim: #1a1d4a;
+    --blurple-glow: rgba(88,101,242,0.2);
+    --green: #57f287;
+    --green-dim: #0f3320;
+    --red: #ed4245;
+    --red-dim: #3a0f10;
+    --yellow: #fee75c;
+    --yellow-dim: #3a330a;
+    --fuchsia: #eb459e;
+    --teal: #1abc9c;
+    --orange: #e67e22;
+    --text: #dbdee1;
+    --text-muted: #80848e;
+    --text-dim: #404249;
+    --nitro: #f47fff;
+    --nitro-dim: #3a0f40;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 0%, rgba(88,101,242,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 80% 100%, rgba(235,69,158,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    position: relative;
+    z-index: 1;
+  }
+  header { margin-bottom: 36px; }
+  .header-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--blurple);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+    background: var(--blurple);
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  h1 span { color: var(--blurple); }
+  .header-sub {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+  .warning-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(254,231,92,0.07);
+    border: 1px solid rgba(254,231,92,0.2);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--yellow);
+    margin-bottom: 24px;
+    line-height: 1.7;
+  }
+  .warning-icon { font-size: 15px; flex-shrink: 0; margin-top: 2px; }
+  .input-section {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .input-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+  .input-label { font-size: 12px; color: var(--text-muted); margin-left: auto; letter-spacing: 0.04em; }
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 18px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: #a5b4fc;
+    resize: vertical;
+    min-height: 150px;
+    line-height: 2;
+    caret-color: var(--blurple);
+  }
+  textarea::placeholder { color: var(--text-dim); }
+  textarea::-webkit-scrollbar { width: 4px; }
+  textarea::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .btn-check {
+    background: var(--blurple);
+    color: #fff;
+    border: none;
+    padding: 11px 26px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    box-shadow: 0 0 24px rgba(88,101,242,0.35);
+    letter-spacing: 0.02em;
+  }
+  .btn-check:hover { background: #4752c4; transform: translateY(-1px); box-shadow: 0 0 36px rgba(88,101,242,0.55); }
+  .btn-check:active { transform: translateY(0); }
+  .btn-check:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .btn-clear {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border2);
+    padding: 11px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-clear:hover { border-color: var(--red); color: var(--red); }
+  .progress-text { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+  .progress-bar-wrap {
+    display: none;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 22px;
+    overflow: hidden;
+  }
+  .progress-bar-wrap.active { display: block; }
+  .progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blurple), var(--fuchsia));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px var(--blurple);
+  }
+  .stats-bar {
+    display: none;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    align-items: center;
+  }
+  .stats-bar.visible { display: flex; }
+  .stat-item { display: flex; align-items: center; gap: 6px; }
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .stat-val { font-weight: 600; }
+  .stat-lbl { color: var(--text-muted); }
+  .results { display: flex; flex-direction: column; gap: 10px; }
+  .token-card {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: fadeUp 0.3s ease forwards;
+    opacity: 0;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .token-card.valid   { border-color: rgba(88,101,242,0.4); box-shadow: 0 0 20px rgba(88,101,242,0.07); }
+  .token-card.invalid { border-color: var(--red-dim); }
+  .token-card.checking { border-color: var(--border2); }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 15px;
+    font-size: 12px;
+  }
+  .valid   .card-header { background: rgba(88,101,242,0.08); }
+  .invalid .card-header { background: rgba(237,66,69,0.06); }
+  .checking .card-header { background: var(--surface2); }
+  .status-badge {
+    padding: 3px 9px;
+    border-radius: 100px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .valid   .status-badge { background: var(--blurple-dim); color: #818cf8; border: 1px solid rgba(88,101,242,0.3); }
+  .invalid .status-badge { background: var(--red-dim); color: var(--red); border: 1px solid rgba(237,66,69,0.3); }
+  .checking .status-badge { background: var(--border2); color: var(--text-muted); border: 1px solid var(--border); animation: blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .token-preview {
+    font-size: 12px;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+  .token-index { color: var(--text-dim); font-size: 11px; flex-shrink: 0; }
+  .card-body {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 18px;
+    padding: 18px;
+    background: var(--surface);
+    align-items: start;
+  }
+  .avatar-wrap { position: relative; flex-shrink: 0; }
+  .avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: block;
+    border: 3px solid var(--blurple-dim);
+    object-fit: cover;
+  }
+  .avatar-placeholder {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 3px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+  .bot-tag {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: var(--blurple);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    border: 2px solid var(--surface);
+  }
+  .user-info { min-width: 0; }
+  .user-name-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .user-display-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .user-tag { font-size: 13px; color: var(--text-muted); }
+  .user-id-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .user-id-val {
+    color: var(--text);
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.1s;
+  }
+  .user-id-val:hover { color: var(--blurple); }
+  .copy-hint { font-size: 10px; color: var(--text-dim); }
+  .meta-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+  .meta-item { display: flex; align-items: center; gap: 4px; color: var(--text-muted); }
+  .meta-val { color: var(--text); }
+  .badges-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+  }
+  .badge-staff        { background: rgba(240,71,71,0.12); color: #f04747; border-color: rgba(240,71,71,0.3); }
+  .badge-partner      { background: rgba(64,135,237,0.12); color: #4087ed; border-color: rgba(64,135,237,0.3); }
+  .badge-hypesquad    { background: rgba(235,69,158,0.12); color: var(--fuchsia); border-color: rgba(235,69,158,0.3); }
+  .badge-bravery      { background: rgba(188,140,255,0.12); color: #bc8cff; border-color: rgba(188,140,255,0.3); }
+  .badge-brilliance   { background: rgba(235,69,158,0.12); color: var(--fuchsia); border-color: rgba(235,69,158,0.3); }
+  .badge-balance      { background: rgba(26,188,156,0.12); color: var(--teal); border-color: rgba(26,188,156,0.3); }
+  .badge-bughunter1   { background: rgba(87,242,135,0.12); color: var(--green); border-color: rgba(87,242,135,0.3); }
+  .badge-bughunter2   { background: rgba(230,126,34,0.12); color: var(--orange); border-color: rgba(230,126,34,0.3); }
+  .badge-earlysupport { background: rgba(244,127,255,0.12); color: var(--nitro); border-color: rgba(244,127,255,0.3); }
+  .badge-verifieddev  { background: rgba(88,101,242,0.12); color: #818cf8; border-color: rgba(88,101,242,0.3); }
+  .badge-moderator    { background: rgba(26,188,156,0.12); color: var(--teal); border-color: rgba(26,188,156,0.3); }
+  .badge-activedev    { background: rgba(87,242,135,0.12); color: var(--green); border-color: rgba(87,242,135,0.3); }
+  .badge-mfa          { background: rgba(87,242,135,0.12); color: var(--green); border-color: rgba(87,242,135,0.3); }
+  .badge-verified     { background: rgba(87,242,135,0.12); color: var(--green); border-color: rgba(87,242,135,0.3); }
+  .badge-bot          { background: rgba(88,101,242,0.12); color: #818cf8; border-color: rgba(88,101,242,0.3); }
+  .nitro-bar {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(244,127,255,0.12), rgba(88,101,242,0.12));
+    border: 1px solid rgba(244,127,255,0.25);
+    color: var(--nitro);
+  }
+  .error-body {
+    padding: 11px 16px;
+    background: var(--surface);
+    font-size: 12px;
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 56px 20px;
+    color: var(--text-dim);
+  }
+  .empty-icon { font-size: 38px; margin-bottom: 12px; opacity: 0.35; }
+  .empty-text { font-size: 13px; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 580px) {
+    .card-body { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-eyebrow">TOKEN VALIDATOR</div>
+    <h1>Discord Token<br><span>Checker</span></h1>
+    <p class="header-sub">複数のDiscordトークンを一括検証 — ユーザー情報・バッジをすべて表示</p>
+  </header>
+
+  <div class="warning-box">
+    <span class="warning-icon">⚠</span>
+    <div>
+      トークンはブラウザから Discord API へ直接送信されます。サーバーへの保存は一切行われません。<br>
+      <strong>自分のアカウントのトークン以外は入力しないでください。</strong>他者のアカウントへの不正アクセスは利用規約違反・違法行為です。
+    </div>
+  </div>
+
+  <div class="input-section">
+    <div class="input-header">
+      <span class="dot dot-r"></span>
+      <span class="dot dot-y"></span>
+      <span class="dot dot-g"></span>
+      <span class="input-label">tokens — 1行に1トークン</span>
+    </div>
+    <textarea id="tokenInput" placeholder="ここに入力してね"></textarea>
+  </div>
+
+  <div class="controls">
+    <button class="btn-check" id="checkBtn" onclick="startCheck()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM1.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0z"/><path d="m10.97 5.97-3.22 3.22-1.47-1.47a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.75-3.75a.75.75 0 0 0-1.06-1.06z"/></svg>
+      チェック開始
+    </button>
+    <button class="btn-clear" onclick="clearAll()">クリア</button>
+    <span class="progress-text" id="progressText"></span>
+  </div>
+
+  <div class="progress-bar-wrap" id="progressWrap">
+    <div class="progress-bar-inner" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-item">
+      <div class="stat-dot" style="background:var(--blurple)"></div>
+      <span class="stat-val" id="statValid">0</span>
+      <span class="stat-lbl">有効</span>
+    </div>
+    <div class="stat-item">
+      <div class="stat-dot" style="background:var(--red)"></div>
+      <span class="stat-val" id="statInvalid">0</span>
+      <span class="stat-lbl">無効</span>
+    </div>
+    <div class="stat-item">
+      <div class="stat-dot" style="background:var(--text-muted)"></div>
+      <span class="stat-val" id="statTotal">0</span>
+      <span class="stat-lbl">合計</span>
+    </div>
+    <div class="stat-item" style="margin-left:auto">
+      <span class="stat-lbl" id="statTime"></span>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="empty-state">
+      <div class="empty-icon">🔐</div>
+      <div class="empty-text">トークンを入力して「チェック開始」を押してください</div>
+    </div>
+  </div>
+
+</div>
+<script>
+const FLAGS = [
+  { bit: 1,       cls: 'badge-staff',        icon: '🛡️', label: 'Discord Staff' },
+  { bit: 2,       cls: 'badge-partner',      icon: '💠', label: 'Partnered Server Owner' },
+  { bit: 4,       cls: 'badge-hypesquad',    icon: '🏅', label: 'HypeSquad Events' },
+  { bit: 8,       cls: 'badge-bughunter1',   icon: '🐛', label: 'Bug Hunter Lv.1' },
+  { bit: 64,      cls: 'badge-bravery',      icon: '🏠', label: 'HypeSquad Bravery' },
+  { bit: 128,     cls: 'badge-brilliance',   icon: '🏠', label: 'HypeSquad Brilliance' },
+  { bit: 256,     cls: 'badge-balance',      icon: '🏠', label: 'HypeSquad Balance' },
+  { bit: 512,     cls: 'badge-earlysupport', icon: '⭐', label: 'Early Supporter' },
+  { bit: 16384,   cls: 'badge-bughunter2',   icon: '🐛', label: 'Bug Hunter Lv.2' },
+  { bit: 131072,  cls: 'badge-verifieddev',  icon: '⚗️', label: 'Early Verified Bot Dev' },
+  { bit: 262144,  cls: 'badge-moderator',    icon: '🔨', label: 'Moderator Programs Alumni' },
+  { bit: 4194304, cls: 'badge-activedev',    icon: '🟢', label: 'Active Developer' },
+];
+
+const NITRO_TYPES = {
+  0: null,
+  1: { label: 'Nitro Classic', icon: '💎' },
+  2: { label: 'Nitro',         icon: '🚀' },
+  3: { label: 'Nitro Basic',   icon: '✨' },
+};
+
+function maskToken(t) {
+  if (t.length <= 14) return t.slice(0, 5) + '•'.repeat(8);
+  return t.slice(0, 10) + '•'.repeat(10) + t.slice(-4);
+}
+
+function escHTML(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function parseTokens(text) {
+  return text.split('\n').map(t => t.trim()).filter(t => t.length > 0);
+}
+
+function snowflakeDate(id) {
+  try {
+    const ms = BigInt(id) >> 22n;
+    return new Date(Number(ms) + 1420070400000);
+  } catch { return null; }
+}
+
+function fmtDate(d) {
+  if (!d) return '不明';
+  return d.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function avatarURL(user) {
+  if (user.avatar) {
+    const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
+    return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
+  }
+  try {
+    const idx = Number((BigInt(user.id) >> 22n) % 6n);
+    return `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+  } catch {
+    return `https://cdn.discordapp.com/embed/avatars/0.png`;
+  }
+}
+
+function getBadges(user) {
+  const badges = [];
+  const flags = user.public_flags || 0;
+  FLAGS.forEach(f => { if (flags & f.bit) badges.push(f); });
+  if (user.bot)         badges.push({ cls:'badge-bot',      icon:'🤖', label:'Bot' });
+  if (user.mfa_enabled) badges.push({ cls:'badge-mfa',      icon:'🔒', label:'2FA 有効' });
+  if (user.verified)    badges.push({ cls:'badge-verified',  icon:'✅', label:'メール認証済' });
+  return badges;
+}
+
+async function checkDiscordToken(token) {
+  const res = await fetch('https://discord.com/api/v10/users/@me', {
+    headers: { 'Authorization': token }
+  });
+  if (res.status === 401) throw new Error('無効なトークン (401 Unauthorized)');
+  if (res.status === 403) throw new Error('アクセス拒否 (403 Forbidden)');
+  if (res.status === 429) {
+    const j = await res.json().catch(() => ({}));
+    const wait = j.retry_after ? `${j.retry_after}秒後に再試行` : '';
+    throw new Error(`レート制限 (429) ${wait}`);
+  }
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    throw new Error(j.message || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+function createCheckingCard(index, token) {
+  const card = document.createElement('div');
+  card.className = 'token-card checking';
+  card.id = `card-${index}`;
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="status-badge">checking…</span>
+      <span class="token-preview">${escHTML(maskToken(token))}</span>
+      <span class="token-index">#${index + 1}</span>
+    </div>`;
+  return card;
+}
+
+function copyId(id) {
+  navigator.clipboard.writeText(id).catch(() => {});
+}
+
+function updateCardValid(card, user, token, index) {
+  const badges = getBadges(user);
+  const nitro = NITRO_TYPES[user.premium_type] || null;
+  const created = snowflakeDate(user.id);
+
+  const tag = (user.discriminator && user.discriminator !== '0')
+    ? `<span class="user-tag">#${escHTML(user.discriminator)}</span>` : '';
+
+  const displayName = escHTML(user.global_name || user.username);
+
+  const badgesHTML = badges.length
+    ? `<div class="badges-row">${badges.map(b =>
+        `<span class="badge ${b.cls}">${b.icon} ${escHTML(b.label)}</span>`).join('')}</div>` : '';
+
+  const nitroHTML = nitro
+    ? `<div class="nitro-bar">${nitro.icon} ${escHTML(nitro.label)}</div>` : '';
+
+  const botTag = user.bot ? `<span class="bot-tag">BOT</span>` : '';
+
+  const safeId = escHTML(user.id);
+
+  card.className = 'token-card valid';
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="status-badge">✓ VALID</span>
+      <span class="token-preview">${escHTML(maskToken(token))}</span>
+      <span class="token-index">#${index + 1}</span>
+    </div>
+    <div class="card-body">
+      <div class="avatar-wrap">
+        <img class="avatar" src="${avatarURL(user)}" alt="${escHTML(user.username)}" loading="lazy"
+             onerror="this.outerHTML='<div class=\\'avatar-placeholder\\'>👤</div>'">
+        ${botTag}
+      </div>
+      <div class="user-info">
+        <div class="user-name-row">
+          <span class="user-display-name">${displayName}</span>
+          ${tag}
+        </div>
+        <div class="user-id-row">
+          🆔&nbsp;<span class="user-id-val" onclick="copyId('${safeId}')" title="クリックでコピー">${safeId}</span>
+          <span class="copy-hint">（クリックでコピー）</span>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-item">📅 アカウント作成:&nbsp;<span class="meta-val">${fmtDate(created)}</span></div>
+          ${user.global_name && user.global_name !== user.username
+            ? `<div class="meta-item">👤 ユーザー名:&nbsp;<span class="meta-val">${escHTML(user.username)}</span></div>` : ''}
+          ${user.email
+            ? `<div class="meta-item">✉️ メール:&nbsp;<span class="meta-val">${escHTML(user.email)}</span></div>` : ''}
+          ${user.locale
+            ? `<div class="meta-item">🌐 言語:&nbsp;<span class="meta-val">${escHTML(user.locale)}</span></div>` : ''}
+          ${user.bot
+            ? `<div class="meta-item">🤖 種別:&nbsp;<span class="meta-val">Bot アカウント</span></div>` : ''}
+        </div>
+        ${nitroHTML}
+        ${badgesHTML}
+      </div>
+    </div>`;
+}
+
+function updateCardInvalid(card, token, index, reason) {
+  card.className = 'token-card invalid';
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="status-badge">✗ INVALID</span>
+      <span class="token-preview">${escHTML(maskToken(token))}</span>
+      <span class="token-index">#${index + 1}</span>
+    </div>
+    <div class="error-body">⛔&nbsp;${escHTML(reason)}</div>`;
+}
+
+let isRunning = false;
+
+async function startCheck() {
+  if (isRunning) return;
+  const tokens = parseTokens(document.getElementById('tokenInput').value);
+  if (!tokens.length) { alert('トークンを1つ以上入力してください'); return; }
+
+  isRunning = true;
+  const startTime = Date.now();
+  let validCount = 0, invalidCount = 0, completed = 0;
+
+  const checkBtn = document.getElementById('checkBtn');
+  checkBtn.disabled = true;
+  checkBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="animation:spin 0.9s linear infinite"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z" opacity=".25"/><path d="M8 1a7 7 0 0 1 7 7h-1.5A5.5 5.5 0 0 0 8 2.5V1z"/></svg> チェック中…`;
+
+  document.getElementById('progressWrap').classList.add('active');
+  document.getElementById('statsBar').classList.add('visible');
+  document.getElementById('statTotal').textContent = tokens.length;
+  document.getElementById('statValid').textContent = '0';
+  document.getElementById('statInvalid').textContent = '0';
+  document.getElementById('statTime').textContent = '';
+
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = '';
+
+  const cards = tokens.map((token, i) => {
+    const card = createCheckingCard(i, token);
+    card.style.animationDelay = `${i * 25}ms`;
+    resultsEl.appendChild(card);
+    return card;
+  });
+
+  function updateProgress() {
+    const pct = Math.round((completed / tokens.length) * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('statValid').textContent = validCount;
+    document.getElementById('statInvalid').textContent = invalidCount;
+    document.getElementById('progressText').textContent = `${completed} / ${tokens.length}`;
+  }
+
+  const CONCURRENCY = 2;
+  const queue = tokens.map((token, i) => async () => {
+    try {
+      const user = await checkDiscordToken(token);
+      updateCardValid(cards[i], user, token, i);
+      validCount++;
+    } catch (err) {
+      updateCardInvalid(cards[i], token, i, err.message || '不明なエラー');
+      invalidCount++;
+    } finally {
+      completed++;
+      updateProgress();
+    }
+  });
+
+  const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+    while (queue.length) await queue.shift()();
+  });
+
+  await Promise.all(workers);
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  document.getElementById('statTime').textContent = `完了 ${elapsed}s`;
+
+  checkBtn.disabled = false;
+  checkBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM1.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0z"/><path d="m10.97 5.97-3.22 3.22-1.47-1.47a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.75-3.75a.75.75 0 0 0-1.06-1.06z"/></svg> チェック開始`;
+  isRunning = false;
+}
+
+function clearAll() {
+  document.getElementById('tokenInput').value = '';
+  document.getElementById('results').innerHTML = `<div class="empty-state"><div class="empty-icon">🔐</div><div class="empty-text">トークンを入力して「チェック開始」を押してください</div></div>`;
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressWrap').classList.remove('active');
+  document.getElementById('statsBar').classList.remove('visible');
+  document.getElementById('progressText').textContent = '';
+}
+
+document.getElementById('tokenInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) startCheck();
+});
+</script>
+</body>
+</html>
