@@ -1,26 +1,64 @@
-// ...前後のコードはそのまま...
+const joinBtn = document.getElementById('joinBtn');
+const logArea = document.getElementById('log');
+const loader = document.getElementById('loader');
 
-    try {
-        const url = `https://discord.com/api/v10/invites/${code}`;
-        
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': token, // ここにトークンが入ります
-                'Content-Type': 'application/json'
-            },
-            // Bodyに空のJSONオブジェクトを明示的に追加
-            body: JSON.stringify({}) 
-        });
+document.getElementById('clearBtn').addEventListener('click', () => {
+    logArea.innerText = "Console cleared.";
+    logArea.style.color = "#00ff00";
+});
 
-        const data = await response.json();
+joinBtn.addEventListener('click', async () => {
+    const tokenText = document.getElementById('token').value;
+    const code = document.getElementById('inviteCode').value;
 
-        if (response.ok) {
-            logArea.style.color = "#3ba55c";
-            logArea.innerText += `>> Status: 200 OK\n>> Joined Server: ${data.guild?.name || 'Success'}`;
-        } else {
-            logArea.style.color = "#ed4245";
-            // エラー内容を詳しく表示
-            logArea.innerText += `>> Status: ${response.status}\n>> Error Code: ${data.code}\n>> Message: ${data.message}`;
+    // 改行で分割し、空白を除去
+    const tokens = tokenText.split(/\r?\n/).map(t => t.trim()).filter(t => t !== "");
+
+    if (tokens.length === 0 || !code) {
+        logArea.innerText = ">> Error: トークンまたは招待コードを入力してください。";
+        logArea.style.color = "var(--danger)";
+        return;
+    }
+
+    joinBtn.disabled = true;
+    loader.style.display = "block";
+    logArea.style.color = "#00ff00";
+    logArea.innerText = `>> Task Started: ${tokens.length} accounts.\n`;
+
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        const displayToken = token.substring(0, 8) + "...";
+        logArea.innerText += `\n[${i + 1}/${tokens.length}] User: ${displayToken}\n`;
+
+        try {
+            // Discord APIへのPOSTリクエスト
+            const url = `https://discord.com/api/v10/invites/${code}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': token,
+                    'Content-Type': 'application/json'
+                },
+                // 無効なJSONエラーを避けるため空オブジェクトを送信
+                body: JSON.stringify({})
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                logArea.innerText += `>> Result: SUCCESS (Joined: ${data.guild?.name || 'Unknown'})\n`;
+            } else {
+                logArea.innerText += `>> Result: FAILED (${response.status})\n>> Msg: ${data.message}\n`;
+            }
+        } catch (error) {
+            logArea.innerText += `>> Network Error: ブラウザによる通信ブロックの可能性があります。\n`;
         }
-// ...以下そのまま...
+
+        // 短時間に大量リクエストを避けるための微小待機（0.5秒）
+        await new Promise(r => setTimeout(r, 500));
+    }
+
+    logArea.innerText += `\n>> All tasks completed.`;
+    joinBtn.disabled = false;
+    loader.style.display = "none";
+});
