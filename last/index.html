@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Last Meadow Automator</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #2b2d31; color: #dbdee1; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #313338; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h1 { color: #f2f3f5; font-size: 1.5rem; border-bottom: 1px solid #404249; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #b5bac1; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 10px; border: none; border-radius: 4px; background-color: #1e1f22; color: #dbdee1; box-sizing: border-box; }
+        input:focus { outline: 2px solid #5865F2; }
+        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: background-color 0.2s; }
+        .btn-primary { background-color: #5865F2; }
+        .btn-primary:hover { background-color: #4752c4; }
+        .btn-danger { background-color: #da373c; }
+        .btn-danger:hover { background-color: #c92b31; }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; }
+        #log-container { margin-top: 20px; background-color: #1e1f22; padding: 10px; border-radius: 4px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9rem; }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px dashed #404249; padding-bottom: 3px; }
+        .log-error { color: #fa777c; }
+        .log-success { color: #57f287; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Last Meadow Automator (教育用)</h1>
+    
+    <div class="form-group">
+        <label for="token">Discord Authorization Token</label>
+        <input type="text" id="token" placeholder="mfa.xxxxx_xxxxxxxxxxxxxxx" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+        <label for="target-level">目標レベル</label>
+        <input type="number" id="target-level" value="100" min="1">
+    </div>
+
+    <div class="button-group">
+        <button id="btn-start" class="btn btn-primary">実行開始</button>
+        <button id="btn-stop" class="btn btn-danger" disabled>停止</button>
+    </div>
+
+    <div id="log-container">
+        <div class="log-entry">システム準備完了。</div>
+    </div>
+</div>
+
+<script>
+    let isRunning = false;
+    let autoLoop = null;
+
+    // ログ出力関数
+    function log(message, type = 'info') {
+        const container = document.getElementById('log-container');
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type === 'error' ? 'log-error' : type === 'success' ? 'log-success' : ''}`;
+        
+        const time = new Date().toLocaleTimeString();
+        entry.textContent = `[${time}] ${message}`;
+        container.appendChild(entry);
+        container.scrollTop = container.scrollHeight; // 自動スクロール
+    }
+
+    // APIリクエストのモック関数（教育目的のため実際のDiscord APIへは送信しません）
+    async function sendDiscordRequest(token, endpoint) {
+        const headers = {
+            "authorization": token,
+            "content-type": "application/json"
+        };
+        
+        // 注: 実際のWebサイトからDiscordAPIを叩くとCORSエラーになります（後述）
+        return fetch(`https://discord.com/api/v9/${endpoint}`, {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify({})
+        });
+    }
+
+    // 実行ループ
+    async function startAutomator() {
+        const token = document.getElementById('token').value;
+        const targetLevel = parseInt(document.getElementById('target-level').value);
+
+        if (!token) {
+            log("エラー: トークンを入力してください。", "error");
+            return;
+        }
+
+        isRunning = true;
+        document.getElementById('btn-start').disabled = true;
+        document.getElementById('btn-stop').disabled = false;
+        log("自動化処理を開始しました...", "success");
+
+        let currentLevel = 0;
+
+        // 非同期の無限ループ
+        while (isRunning && currentLevel < targetLevel) {
+            try {
+                // ※ここではLast MeadowのAPIエンドポイントを想定したダミーURLを使用
+                log(`APIへリクエスト送信中... (レベル: ${currentLevel}/${targetLevel})`);
+                
+                // 実際のコードではここで sendDiscordRequest を呼び出します
+                // await sendDiscordRequest(token, "last_meadow/action");
+                
+                // シミュレーション用のウェイト (1秒)
+                await new Promise(r => setTimeout(r, 1000));
+                
+                currentLevel++;
+                log(`アクション成功。現在のレベル: ${currentLevel}`, "success");
+
+            } catch (error) {
+                log(`通信エラー: ${error.message}`, "error");
+                await new Promise(r => setTimeout(r, 5000)); // エラー時は5秒待機
+            }
+        }
+
+        if (currentLevel >= targetLevel) {
+            log("目標レベルに到達しました。処理を終了します。", "success");
+            stopAutomator();
+        }
+    }
+
+    function stopAutomator() {
+        isRunning = false;
+        document.getElementById('btn-start').disabled = false;
+        document.getElementById('btn-stop').disabled = true;
+        log("自動化処理を停止しました。");
+    }
+
+    // イベントリスナーの設定
+    document.getElementById('btn-start').addEventListener('click', startAutomator);
+    document.getElementById('btn-stop').addEventListener('click', stopAutomator);
+
+</script>
+</body>
+</html>
